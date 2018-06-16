@@ -83,6 +83,15 @@ public class SNMPManager {
                         }
                         BER.encodeOID(os_value, BER.OID, values);
                         break;
+                    case BER.GAUGE:
+                        BER.encodeUnsignedInteger(os_value, BER.INTEGER, Integer.valueOf((String)value));
+                        break;
+                    case BER.COUNTER:
+                        BER.encodeUnsignedInteger(os_value, BER.INTEGER, Integer.valueOf((String)value));
+                        break;
+                    case BER.TIMETICKS:
+                        BER.encodeUnsignedInteger(os_value, BER.INTEGER, Integer.valueOf((String)value));
+                        break;
                     default:
                         break;
                 }
@@ -221,15 +230,15 @@ public class SNMPManager {
                     results[2] = "IPAddress";
                     break;
                 case 0x41: //Counter
-                    results[1] = "";
+                    results[1] = String.valueOf(BER.decodeUnsignedInteger(is, mutableByte));
                     results[2] = "Counter";
                     break;
                 case 0x42: //Gauge
-                    results[1] = "";
+                    results[1] = String.valueOf(BER.decodeUnsignedInteger(is, mutableByte));
                     results[2] = "Gauge";
                     break;
                 case 0x43: //TimeTicks
-                    results[1] = "";
+                    results[1] = String.valueOf(BER.decodeUnsignedInteger(is, mutableByte));
                     results[2] = "TimeTicks";
                     break;
                 case 0x44: //Opaque
