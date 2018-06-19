@@ -1,5 +1,6 @@
 package com.example.jang_yongsu.snmp;
 
+import android.Manifest;
 import android.util.Log;
 
 import com.example.jang_yongsu.snmp.asn1_java.BER;
@@ -21,19 +22,22 @@ public class SNMPManager {
 
     //FIEXD OPTION
     private byte[] versionBER;
-    private byte[] community_BER;
+    private byte[] community_BER_public;
+    private byte[] community_BER_write;
     private byte[] errorStatus_BER;
     private byte[] errorIndex_BER;
 
     //생성자
     public SNMPManager(){
         BEROutputStream os_ver = new BEROutputStream(ByteBuffer.allocate(30));
-        BEROutputStream os_com = new BEROutputStream(ByteBuffer.allocate(30));
+        BEROutputStream os_com_public = new BEROutputStream(ByteBuffer.allocate(30));
+        BEROutputStream os_com_write = new BEROutputStream(ByteBuffer.allocate(30));
         BEROutputStream os_errStatus = new BEROutputStream(ByteBuffer.allocate(30));
         BEROutputStream os_errIndex = new BEROutputStream(ByteBuffer.allocate(30));
         try{
             BER.encodeInteger(os_ver, BER.INTEGER, 1);
-            BER.encodeString(os_com, BER.OCTETSTRING, "public".getBytes());
+            BER.encodeString(os_com_public, BER.OCTETSTRING, "public".getBytes());
+            BER.encodeString(os_com_write, BER.OCTETSTRING, "write".getBytes());
             BER.encodeInteger(os_errStatus, BER.INTEGER, 0);
             BER.encodeInteger(os_errIndex, BER.INTEGER, 0);
         }catch(IOException ex) {
@@ -41,7 +45,8 @@ public class SNMPManager {
         }
 
         versionBER = bufferTobytes(os_ver.getBuffer());
-        community_BER = bufferTobytes(os_com.getBuffer());
+        community_BER_public = bufferTobytes(os_com_public.getBuffer());
+        community_BER_write = bufferTobytes(os_com_write.getBuffer());
         errorStatus_BER = bufferTobytes(os_errStatus.getBuffer());
         errorIndex_BER = bufferTobytes(os_errIndex.getBuffer());
     }
@@ -69,7 +74,7 @@ public class SNMPManager {
                 //BER.encodeInteger(os_value, BER.INTEGER, value);
                 switch (type){
                     case BER.INTEGER:
-                        BER.encodeInteger(os_value, BER.INTEGER, (int)value);
+                        BER.encodeInteger(os_value, BER.INTEGER, Integer.valueOf((String)value));
                         break;
                     case BER.OCTETSTRING:
 //                        Log.i("INFO","write new String");
@@ -157,9 +162,15 @@ public class SNMPManager {
         BEROutputStream os = new BEROutputStream(ByteBuffer.allocate(999));
 
         try{
-            BER.encodeSequence(os, BER.SEQUENCE, versionBER.length+community_BER.length+requestData.length);
-            os.write(versionBER);
-            os.write(community_BER);
+            if(work == SETREQUEST){
+                BER.encodeSequence(os, BER.SEQUENCE, versionBER.length+community_BER_write.length+requestData.length);
+                os.write(versionBER);
+                os.write(community_BER_write);
+            }else{
+                BER.encodeSequence(os, BER.SEQUENCE, versionBER.length+community_BER_public.length+requestData.length);
+                os.write(versionBER);
+                os.write(community_BER_public);
+            }
             os.write(requestData);
         }catch(IOException ex){
             ex.printStackTrace();
@@ -190,7 +201,12 @@ public class SNMPManager {
             BER.decodeHeader(is, mutableByte);
             BER.decodeInteger(is, mutableByte);
             //error-status
-            BER.decodeInteger(is, mutableByte);
+            int error = BER.decodeInteger(is, mutableByte);
+            if(error != 0x00){
+                results[1] = "";
+                results[2] = "ERROR";
+                return results;
+            }
             //error-index
             BER.decodeInteger(is, mutableByte);
             BER.decodeHeader(is, mutableByte);
@@ -245,6 +261,10 @@ public class SNMPManager {
                     results[1] = "";
                     results[2] = "Opaque";
                     break;
+                case 0x82:
+                    Log.i("info", "0x82");
+                default:
+                    Log.i("info", "default");
 
             }
         }catch(IOException ex){

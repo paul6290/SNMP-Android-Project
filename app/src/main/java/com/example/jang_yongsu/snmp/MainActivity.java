@@ -22,7 +22,6 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int UDP_RECEIVE = 0;
 
-
     public static final int GET = 0;
     public static final int SET = 1;
     public static final int WALK = 2;
@@ -123,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if(workState == WALK){
                     snmpWALK(results[0]);
-                    walkResultTXV.append("["+results[2]+"]" + "  " + results[1]+'\n');
+                    walkResultTXV.append(results[0]+ " ["+results[2]+"] " + results[1]+'\n');
                 }else{
                     String resultSTR = "[OID] " + results[0] + "\n" + "[VALUE] " + results[1] + " ("+results[2]+")";
                     getsetResultTXV.setText("");
