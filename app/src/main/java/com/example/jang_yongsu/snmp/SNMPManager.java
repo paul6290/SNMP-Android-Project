@@ -213,7 +213,7 @@ public class SNMPManager {
             BER.decodeHeader(is, mutableByte);
             int[] key = BER.decodeOID(is, mutableByte);
             results[0] = arrayToString(key, key.length); // oid save
-            int dataType = is.getBuffer().get(is.getBuffer().position());
+            int dataType = (int)is.getBuffer().get(is.getBuffer().position());
 
             switch (dataType){
                 case 0x02: //INTEGER
@@ -261,11 +261,14 @@ public class SNMPManager {
                     results[1] = "";
                     results[2] = "Opaque";
                     break;
-                case 0x82:
+                case (byte)BER.ENDOFMIBVIEW:
                     Log.i("info", "0x82");
+                    results[1] = "";
+                    results[2] = "END";
+                    break;
                 default:
                     Log.i("info", "default");
-
+                    break;
             }
         }catch(IOException ex){
             ex.printStackTrace();

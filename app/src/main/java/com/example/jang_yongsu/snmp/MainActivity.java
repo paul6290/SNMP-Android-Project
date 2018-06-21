@@ -80,20 +80,20 @@ public class MainActivity extends AppCompatActivity {
 
 
         snmp = new SNMPManager();
-        udp = new UDPManager(UDPHandler,"kuwiden.iptime.org", 11161);
+        udp = new UDPManager(UDPHandler,"61.72.142.10", 11161);
 
     }
 
     private void snmpGET(String oid){
-        udp.sendMessage(snmp.buildRequestPacket(oid, SNMPManager.GETREQUEST, (byte)0x00, 0));
+        udp.sendAndReceiveMessage(snmp.buildRequestPacket(oid, SNMPManager.GETREQUEST, (byte)0x00, 0));
     }
 
     private void snmpSET(String oid, byte type, Object value){
-        udp.sendMessage(snmp.buildRequestPacket(oid, SNMPManager.SETREQUEST, type, value));
+        udp.sendAndReceiveMessage(snmp.buildRequestPacket(oid, SNMPManager.SETREQUEST, type, value));
     }
 
     private void snmpWALK(String oid){
-        udp.sendMessage(snmp.buildRequestPacket(oid, SNMPManager.GETNEXTREQUEST, (byte)0x00, 0));
+        udp.sendAndReceiveMessage(snmp.buildRequestPacket(oid, SNMPManager.GETNEXTREQUEST, (byte)0x00, 0));
     }
 
 
@@ -118,11 +118,13 @@ public class MainActivity extends AppCompatActivity {
 
                 String[] results = snmp.parseReceiveMessage(message);
 
-                Log.i("INFO", results[0] + " " + results[2] + "  " + results[1]);
+                Log.i("RESULT", results[0] + " " + results[2] + "  " + results[1]);
 
                 if(workState == WALK){
-                    snmpWALK(results[0]);
                     walkResultTXV.append(results[0]+ " ["+results[2]+"] " + results[1]+'\n');
+                    if(!results[2].equals("END")){
+                        snmpWALK(results[0]);
+                    }
                 }else{
                     String resultSTR = "[OID] " + results[0] + "\n" + "[VALUE] " + results[1] + " ("+results[2]+")";
                     getsetResultTXV.setText("");

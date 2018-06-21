@@ -7,6 +7,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 
 public class UDPManager{
 
@@ -21,7 +22,7 @@ public class UDPManager{
         this.TargetPort = port;
     }
 
-    public void sendMessage(final byte[] message){
+    public void sendAndReceiveMessage(final byte[] message){
 
         new Thread(new Runnable() {
             @Override
@@ -31,12 +32,25 @@ public class UDPManager{
                     DatagramSocket socket = new DatagramSocket();
                     DatagramPacket packet = new DatagramPacket(message, message.length, targetAddr, TargetPort);
                     socket.send(packet);
+                    socket.setSoTimeout(2000);
                     Log.i("INFO", "Send Success");
-                    int receivePort = socket.getPort();
+
                     byte[] buf = new byte[1024];
                     DatagramPacket receivePacket = new DatagramPacket(buf, buf.length);
-                    socket.receive(receivePacket);
-                    Log.i("INFO", "Receive Success");
+
+                    //2초이상 응답이 없을 경우 재전송.
+                    while(true){
+                        try{
+                            socket.receive(receivePacket);
+                            Log.i("INFO", "Receive Success");
+                            break;
+                        }catch (SocketTimeoutException ex){
+                            Log.i("Info", "Socket Timeout Exception");
+                            socket.send(packet);
+                            socket.setSoTimeout(2000);
+                        }
+                    }
+
                     handler.obtainMessage(MainActivity.UDP_RECEIVE, receivePacket.getLength(), -1, buf).sendToTarget();
                     socket.close();
                 }catch(Exception ex){
